@@ -1,4 +1,4 @@
-from util import myConvexHull
+from myConvexHull import convex_hull
 from scipy.spatial import ConvexHull
 import numpy as np
 import pandas as pd
