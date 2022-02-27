@@ -42,10 +42,7 @@ class Point:
         return False
 
     def __hash__(self):
-        return hash(self.x)
-
-    def __repr__(self):
-        return f"({self.x}, {self.y})"  
+        return hash(self.x) 
 
 def tuples_to_points(list_tuples):
     '''
@@ -178,7 +175,6 @@ def visualization():
         bucket = bucket.iloc[:,[0,1]].values
         upper, lower = convex_hull(bucket)
         simplices = construct_simplices(upper, lower, bucket)
-        print(simplices)
         plt.scatter(bucket[:,0],bucket[:,1], label=data.target_names[i])
         for simplex in simplices:
             plt.plot(bucket[simplex, 0], bucket[simplex,1], colors[i])
