@@ -95,15 +95,16 @@ def convex_hull(points):
     '''
     Menentukan convex hull
     '''
-    points = sorted(tuples_to_points(points))
+    sorted_points = sorted(tuples_to_points(points))
     total_points = len(points)
 
     # Mengambil titik yang terletak di absis paling kiri dan kanan
-    leftmost_point = points[0]
-    rightmost_point = points[total_points-1]
+    leftmost_point = sorted_points[0]
+    rightmost_point = sorted_points[total_points-1]
 
     # List convex hull
-    res = [leftmost_point, rightmost_point]
+    upper_res = [leftmost_point, rightmost_point]
+    lower_res = [leftmost_point, rightmost_point]
     # Menginisialisasi list untuk menyimpan titik-titik yang berada di atas dan di bawah
     # garis yang dibentuk titik leftmost_point dan rightmost_point
     upper_area = []
@@ -111,42 +112,60 @@ def convex_hull(points):
 
     # Menyimpan titik yang memenuhi syarat ke list upper _area atau lower_area
     for i in range(1, total_points-1):
-        distance = determinant(leftmost_point, rightmost_point, points[i])
+        distance = determinant(leftmost_point, rightmost_point, sorted_points[i])
         # Append point ke list upper_area apabila nilai distance > 0
         if (distance > 0):
-            upper_area.append(points[i])
+            upper_area.append(sorted_points[i])
         # Append point ke list lower_area apabila nilai distance <= 0
         else:
-            lower_area.append(points[i])
+            lower_area.append(sorted_points[i])
 
-    # Divide & conquer (mengonstruksi convex hull untuk upper_area dan lower_area dan menyimpan hasil keduanya ke res)
-    construct_convex_hull(upper_area, leftmost_point, rightmost_point, res)
-    construct_convex_hull(lower_area, rightmost_point, leftmost_point, res)
+    # Divide & conquer (mengonstruksi convex hull untuk upper_area dan lower_area)
+    construct_convex_hull(upper_area, leftmost_point, rightmost_point, upper_res)
+    construct_convex_hull(lower_area, rightmost_point, leftmost_point, lower_res)
 
-    return sorted(res)
+    return sorted(upper_res), sorted(lower_res)
 
 def construct_indices(points, points_convex_hull):
     '''
-    Menyimpan indeks points, jika elemen point di points sama dengan point di points_convex_hull
+    Menyimpan indeks dan koordinat x points, jika elemen point di points sama dengan point di points_convex_hull
     '''
     points = tuples_to_points(points)
     indices = []
 
-    for i in range (len(points)):
-        for point in points_convex_hull:
+    for point in points_convex_hull:
+        for i in range (len(points)):
             if point == points[i]:
                 indices.append(i)
     
     return indices
 
+def construct_simplices(upper, lower, points):
+    '''
+    Mengonstruksi simplices (pasangan indeks) dengan tujuan visualisasi nanti
+    '''
+    upper_indices = construct_indices(points, upper)
+    lower_indices = construct_indices(points, lower)
+    simplices = []
+
+    # upper
+    for i in range (len(upper_indices)-1):
+        simplices.append([upper_indices[i],upper_indices[i+1]])
+    simplices.append([upper_indices[i],upper_indices[i+1]])
+
+    #lower
+    for i in range (len(lower_indices)-1):
+        simplices.append([lower_indices[i],lower_indices[i+1]])
+    simplices.append([lower_indices[i],lower_indices[i+1]])
+
+    return simplices    
+    
 def visualization():    
     data = datasets.load_iris()
 
     #create a DataFrame
     df = pd.DataFrame(data.data, columns=data.feature_names)
     df['Target'] = pd.DataFrame(data.target)
-    # print(df.shape)
-    # df.head()
 
     #visualisasi hasil myConvexHull
     plt.figure(figsize = (10, 6))
@@ -157,11 +176,12 @@ def visualization():
     for i in range(len(data.target_names)):
         bucket = df[df['Target'] == i]
         bucket = bucket.iloc[:,[0,1]].values
-        hull = convex_hull(bucket)
-        print(hull)
+        upper, lower = convex_hull(bucket)
+        simplices = construct_simplices(upper, lower, bucket)
+        print(simplices)
         plt.scatter(bucket[:,0],bucket[:,1], label=data.target_names[i])
-        # for simplex in hull.simplices:
-        #     plt.plot(bucket[simplex, 0], bucket[simplex,1], colors[i])
+        for simplex in simplices:
+            plt.plot(bucket[simplex, 0], bucket[simplex,1], colors[i])
     plt.legend()
 
 if __name__ == "__main__":
