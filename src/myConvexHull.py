@@ -67,12 +67,11 @@ def determinant(left, right, point):
     Menghitung determinan yang nantinya nilainya digunakan untuk mengelompokkan titik point,
     terletak di sebelah atas atau bawah garis yang dibentuk titik left dan right 
     '''
-    det = (left.x * right.y + right.x * point.y + point.x * left.y) - (left.y * right.x + right.y * point.x + point.y * left.x)
-    return det
+    return (left.x * right.y + right.x * point.y + point.x * left.y) - (left.y * right.x + right.y * point.x + point.y * left.x)
 
-def construct_convex_hull(points, left, right, convex_set):
+def construct_convex_hull(points, left, right, hull):
     '''
-    Mengupdate convex_set apabila terdapat point yang memenuhi syarat untuk dapat
+    Mengupdate hull apabila terdapat point yang memenuhi syarat untuk dapat
     membentuk convex hull 
     '''
     extreme_point = None
@@ -88,9 +87,9 @@ def construct_convex_hull(points, left, right, convex_set):
                     extreme_distance = distance
                     extreme_point = point
     if extreme_point:
-        construct_convex_hull(candidate_points, left, extreme_point, convex_set)
-        convex_set.add(extreme_point)
-        construct_convex_hull(candidate_points, extreme_point, right, convex_set)
+        construct_convex_hull(candidate_points, left, extreme_point, hull)
+        hull.append(extreme_point)
+        construct_convex_hull(candidate_points, extreme_point, right, hull)
 
 def convex_hull(points):
     '''
@@ -99,25 +98,46 @@ def convex_hull(points):
     points = sorted(tuples_to_points(points))
     total_points = len(points)
 
+    # Mengambil titik yang terletak di absis paling kiri dan kanan
     leftmost_point = points[0]
     rightmost_point = points[total_points-1]
 
-    res = {leftmost_point, rightmost_point}
-    upper_hull = []
-    lower_hull = []
+    # List convex hull
+    res = [leftmost_point, rightmost_point]
+    # Menginisialisasi list untuk menyimpan titik-titik yang berada di atas dan di bawah
+    # garis yang dibentuk titik leftmost_point dan rightmost_point
+    upper_area = []
+    lower_area = []
 
+    # Menyimpan titik yang memenuhi syarat ke list upper _area atau lower_area
     for i in range(1, total_points-1):
         distance = determinant(leftmost_point, rightmost_point, points[i])
+        # Append point ke list upper_area apabila nilai distance > 0
         if (distance > 0):
-            upper_hull.append(points[i])
+            upper_area.append(points[i])
+        # Append point ke list lower_area apabila nilai distance <= 0
         else:
-            lower_hull.append(points[i])
+            lower_area.append(points[i])
 
-    # Divide & conquer
-    construct_convex_hull(upper_hull, leftmost_point, rightmost_point, res)
-    construct_convex_hull(lower_hull, rightmost_point, leftmost_point, res)
+    # Divide & conquer (mengonstruksi convex hull untuk upper_area dan lower_area dan menyimpan hasil keduanya ke res)
+    construct_convex_hull(upper_area, leftmost_point, rightmost_point, res)
+    construct_convex_hull(lower_area, rightmost_point, leftmost_point, res)
 
     return sorted(res)
+
+def construct_indices(points, points_convex_hull):
+    '''
+    Menyimpan indeks points, jika elemen point di points sama dengan point di points_convex_hull
+    '''
+    points = tuples_to_points(points)
+    indices = []
+
+    for i in range (len(points)):
+        for point in points_convex_hull:
+            if point == points[i]:
+                indices.append(i)
+    
+    return indices
 
 def visualization():    
     data = datasets.load_iris()
